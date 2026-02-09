@@ -189,6 +189,17 @@ const LoginPage = () => {
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
+
+          <p className="signup-text">
+            Not a member?{" "}
+            <span
+              style={{ cursor: "pointer", color: "#007bff" }}
+              onClick={() => navigate("/signup")}
+            >
+              Create an account
+            </span>
+          </p>
+
         </div>
       </div>
     </div>

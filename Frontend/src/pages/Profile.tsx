@@ -1,9 +1,26 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Bell, Moon, DollarSign, FileText, HelpCircle, LogOut, ChevronRight } from 'lucide-react';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase';
 import './profile.css';
 
 const Profile: React.FC = () => {
+  const navigate = useNavigate();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await signOut(auth);
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -28,18 +45,20 @@ const Profile: React.FC = () => {
         {/* Financial Context Section */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <h3 className="text-sm font-semibold text-gray-700 mb-4">Investment Profile</h3>
-          
+
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Risk Profile</span>
-              <span className="text-sm font-medium text-gray-900 bg-blue-50 px-3 py-1 rounded-full">Moderate</span>
+              <span className="text-sm font-medium text-gray-900 bg-blue-50 px-3 py-1 rounded-full">
+                Moderate
+              </span>
             </div>
-            
+
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Experience Level</span>
               <span className="text-sm font-medium text-gray-900">Intermediate</span>
             </div>
-            
+
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Preferred Markets</span>
               <span className="text-sm font-medium text-gray-900">Stocks, ETFs</span>
@@ -50,7 +69,7 @@ const Profile: React.FC = () => {
         {/* Preferences & Settings */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <h3 className="text-sm font-semibold text-gray-700 mb-4">Preferences</h3>
-          
+
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -109,9 +128,15 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Logout Button */}
-        <button className="w-full bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-200 hover:bg-red-50 hover:border-red-200 transition-colors flex items-center justify-center gap-2">
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-200 hover:bg-red-50 hover:border-red-200 transition-colors flex items-center justify-center gap-2"
+        >
           <LogOut className="w-5 h-5 text-red-600" />
-          <span className="text-sm font-medium text-red-600">Logout</span>
+          <span className="text-sm font-medium text-red-600">
+            {loggingOut ? "Logging out..." : "Logout"}
+          </span>
         </button>
 
         {/* App Version */}
