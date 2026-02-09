@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Home, Bot, User, TrendingUp, TrendingDown, Search, RefreshCw } from 'lucide-react';
+import { Home as HomeIcon, Bot, User } from 'lucide-react';
+import Home from './Home';
+import Chatbot from './Chatbot';
+import Profile from './Profile';
 import './HomePage.css';
 
 // --- Interfaces ---
@@ -43,7 +45,7 @@ interface PortfolioData {
 
 const HomePage: React.FC = () => {
   // CONNECTION TO YOUR BACKEND SERVER
-  const BACKEND_URL = 'http://localhost:5000/api';
+  const BACKEND_URL = 'http://localhost:3001/api';
 
   // INITIAL STATE: Default Indian Portfolio
   const [portfolioData, setPortfolioData] = useState<PortfolioData>({
@@ -67,6 +69,7 @@ const HomePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'gainers' | 'losers'>('gainers');
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [activeScreen, setActiveScreen] = useState<'home' | 'chat' | 'profile'>('home');
 
   useEffect(() => {
     initializeData();
@@ -206,29 +209,6 @@ const HomePage: React.FC = () => {
     setChartData(data);
   };
 
-  const StockItem: React.FC<{ stock: StockData }> = ({ stock }) => (
-    <div className="stock-item">
-      <div className="stock-item-left">
-        <div className={`stock-icon ${stock.change >= 0 ? 'positive' : 'negative'}`}>
-          {stock.symbol.substring(0, 2)}
-        </div>
-        <div className="stock-info">
-          <div className="stock-symbol">{stock.symbol}</div>
-          <div className="stock-name">{stock.name}</div>
-        </div>
-      </div>
-      <div className="stock-item-right">
-        {/* UPDATED: Rupee Symbol & Indian Number Formatting */}
-        <div className="stock-price">
-          ₹{stock.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-        </div>
-        <div className={`stock-percent ${stock.change >= 0 ? 'positive' : 'negative'}`}>
-          {stock.change >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
-        </div>
-      </div>
-    </div>
-  );
-
   if (loading) {
     return (
       <div className="loading-container">
@@ -241,153 +221,51 @@ const HomePage: React.FC = () => {
     );
   }
 
-  const isNewUser = portfolioData.currentValue === 0;
-
   return (
     <div className="dashboard">
-      <div className="header">
-        <div className="header-greeting">Hello, Investor</div>
-        <h1 className="header-title">Dashboard</h1>
-        {apiError && (
-          <div className="api-error-banner">
-             ⚠️ {apiError}
-             <button className="retry-btn" onClick={() => window.location.reload()}>
-               <RefreshCw size={12} /> Retry
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="search-container">
-        <div className="search-wrapper">
-          <Search className="search-icon" size={20} />
-          <input type="text" placeholder="Search stocks (e.g. RELIANCE)..." className="search-input" />
-        </div>
-      </div>
-
-      <div className="portfolio-section">
-        <div className="portfolio-card">
-          <div className="portfolio-label">Portfolio value</div>
-          <div className="portfolio-value">
-            {/* UPDATED: Rupee Symbol */}
-            ₹{portfolioData.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-          </div>
-          {!isNewUser && (
-            <div className={`portfolio-change ${portfolioData.change >= 0 ? 'positive' : 'negative'}`}>
-              {portfolioData.change >= 0 ? '+' : ''}₹{Math.abs(portfolioData.change).toLocaleString('en-IN', { maximumFractionDigits: 2 })} 
-              ({portfolioData.change >= 0 ? '+' : ''}{portfolioData.changePercent.toFixed(2)}%) Today
-            </div>
-          )}
-          
-          {!isNewUser && chartData.length > 0 && (
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <XAxis dataKey="time" stroke="#fff" strokeOpacity={0.5} tick={{ fill: '#fff', fontSize: 10 }} tickLine={false} />
-                  <YAxis hide domain={['dataMin - 50', 'dataMax + 50']} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#1e40af', border: 'none', borderRadius: '8px', color: '#fff' }}
-                    labelStyle={{ color: '#fff' }}
-                    formatter={(value: any) => [`₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 'Value']}
-                  />
-                  <Line type="monotone" dataKey="value" stroke="#fff" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="tabs-section">
-        <div className="tabs">
-          <button onClick={() => setActiveTab('gainers')} className={`tab ${activeTab === 'gainers' ? 'active' : ''}`}>
-            <TrendingUp size={16} className="tab-icon" />
-            Top Gainers
-          </button>
-          <button onClick={() => setActiveTab('losers')} className={`tab ${activeTab === 'losers' ? 'active' : ''}`}>
-            <TrendingDown size={16} className="tab-icon" />
-            Top Losers
-          </button>
-        </div>
-      </div>
-
-      <div className="stocks-section">
-        <div className="stocks-card">
-          {activeTab === 'gainers' && topGainers.length > 0 ? (
-            topGainers.map((stock) => <StockItem key={stock.symbol} stock={stock} />)
-          ) : activeTab === 'losers' && topLosers.length > 0 ? (
-            topLosers.map((stock) => <StockItem key={stock.symbol} stock={stock} />)
-          ) : (
-            <div className="no-data">
-              {apiError ? 'Check Backend Connection' : 'No dynamic market data available'}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="news-section">
-        <h2 className="news-title">Market News</h2>
-        {news.map((item, index) => (
-            <div key={index} onClick={() => setSelectedNews(item)} className="news-item clickable">
-              <img src={item.image} alt={item.title} className="news-image" />
-              <div className="news-content">
-                <h3 className="news-headline">{item.title}</h3>
-                <div className="news-meta">
-                  <span>{item.source}</span>
-                  <span>•</span>
-                  <span>{item.time}</span>
-                </div>
-              </div>
-            </div>
-        ))}
-      </div>
-      
-      {/* News Modal */}
-      {selectedNews && (
-        <div className="news-modal-overlay" onClick={() => setSelectedNews(null)}>
-          <div className="news-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="news-modal-header">
-              <button className="news-modal-close" onClick={() => setSelectedNews(null)}>
-                ✕
-              </button>
-            </div>
-            <img src={selectedNews.image} alt={selectedNews.title} className="news-modal-image" />
-            <div className="news-modal-content">
-              <div className="news-modal-meta">
-                <span className="news-modal-source">{selectedNews.source}</span>
-                <span>•</span>
-                <span className="news-modal-time">{selectedNews.time}</span>
-              </div>
-              <h1 className="news-modal-title">{selectedNews.title}</h1>
-              {selectedNews.description && (
-                <p className="news-modal-description">{selectedNews.description}</p>
-              )}
-              {selectedNews.content && (
-                <div className="news-modal-body">
-                  {selectedNews.content.split('\n').map((para, i) => (
-                    <p key={i}>{para}</p>
-                  ))}
-                </div>
-              )}
-              {selectedNews.url !== '#' && (
-                <a 
-                  href={selectedNews.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="news-modal-link"
-                >
-                  Read full article →
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Conditional Screen Rendering */}
+      {activeScreen === 'home' && (
+        <Home
+          portfolioData={portfolioData}
+          chartData={chartData}
+          topGainers={topGainers}
+          topLosers={topLosers}
+          news={news}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          selectedNews={selectedNews}
+          setSelectedNews={setSelectedNews}
+          apiError={apiError}
+        />
       )}
+      
+      {activeScreen === 'chat' && <Chatbot />}
+      
+      {activeScreen === 'profile' && <Profile />}
 
+      {/* Bottom Navigation */}
       <nav className="bottom-nav">
-        <button className="nav-item active"><Home size={24} /><span className="nav-label">Home</span></button>
-        <button className="nav-item"><Bot size={24} /><span className="nav-label">AI Chat</span></button>
-        <button className="nav-item"><User size={24} /><span className="nav-label">Profile</span></button>
+        <button 
+          className={`nav-item ${activeScreen === 'home' ? 'active' : ''}`}
+          onClick={() => setActiveScreen('home')}
+        >
+          <HomeIcon size={24} />
+          <span className="nav-label">Home</span>
+        </button>
+        <button 
+          className={`nav-item ${activeScreen === 'chat' ? 'active' : ''}`}
+          onClick={() => setActiveScreen('chat')}
+        >
+          <Bot size={24} />
+          <span className="nav-label">AI Chat</span>
+        </button>
+        <button 
+          className={`nav-item ${activeScreen === 'profile' ? 'active' : ''}`}
+          onClick={() => setActiveScreen('profile')}
+        >
+          <User size={24} />
+          <span className="nav-label">Profile</span>
+        </button>
       </nav>
     </div>
   );
