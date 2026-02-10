@@ -50,6 +50,72 @@ body {
   margin-top: 0.5rem;
 }
 
+/* Nifty Card (Replaces Search) */
+.nifty-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+}
+
+.nifty-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.nifty-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.nifty-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.nifty-symbol {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+  margin-top: 4px;
+}
+
+.nifty-price-block {
+  text-align: right;
+}
+
+.nifty-price {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.nifty-change {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.nifty-change.positive {
+  color: #10b981;
+}
+
+.nifty-change.negative {
+  color: #ef4444;
+}
+
+
 /* Search */
 .search-container {
   margin-bottom: 1.5rem;
@@ -591,6 +657,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -601,6 +668,7 @@ body {
     transform: translateY(30px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -619,38 +687,38 @@ body {
     padding: 1rem;
     padding-bottom: 80px;
   }
-  
+
   .portfolio-value {
     font-size: 2rem;
   }
-  
+
   .news-image {
     width: 80px;
     height: 80px;
   }
-  
+
   .stock-icon {
     width: 40px;
     height: 40px;
     font-size: 0.75rem;
   }
-  
+
   .stock-symbol {
     font-size: 0.875rem;
   }
-  
+
   .stock-name {
     font-size: 0.7rem;
   }
-  
+
   .stock-price {
     font-size: 0.875rem;
   }
-  
+
   .stock-percent {
     font-size: 0.75rem;
   }
-  
+
   .header-title {
     font-size: 1.5rem;
   }

@@ -15,6 +15,10 @@ interface StockData {
   country?: string;
 }
 
+interface NiftyData extends StockData {
+  // reusing StockData for now as it fits
+}
+
 interface NewsItem {
   title: string;
   source: string;
@@ -53,6 +57,7 @@ interface HomeProps {
   selectedNews: NewsItem | null;
   setSelectedNews: (news: NewsItem | null) => void;
   apiError: string | null;
+  niftyData: StockData | null;
 }
 
 const Home: React.FC<HomeProps> = ({
@@ -65,7 +70,8 @@ const Home: React.FC<HomeProps> = ({
   setActiveTab,
   selectedNews,
   setSelectedNews,
-  apiError
+  apiError,
+  niftyData
 }) => {
   const StockItem: React.FC<{ stock: StockData }> = ({ stock }) => (
     <div className="stock-item">
@@ -98,9 +104,9 @@ const Home: React.FC<HomeProps> = ({
         <h1 className="header-title">Dashboard</h1>
         {apiError && (
           <div className="api-error-banner">
-             ⚠️ {apiError}
-             <button className="retry-btn" onClick={() => window.location.reload()}>
-               <RefreshCw size={12} /> Retry
+            ⚠️ {apiError}
+            <button className="retry-btn" onClick={() => window.location.reload()}>
+              <RefreshCw size={12} /> Retry
             </button>
           </div>
         )}
@@ -115,27 +121,31 @@ const Home: React.FC<HomeProps> = ({
 
       <div className="portfolio-section">
         <div className="portfolio-card">
-          <div className="portfolio-label">Portfolio value</div>
-          <div className="portfolio-value">
-            ₹{portfolioData.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-          </div>
-          {!isNewUser && (
-            <div className={`portfolio-change ${portfolioData.change >= 0 ? 'positive' : 'negative'}`}>
-              {portfolioData.change >= 0 ? '+' : ''}₹{Math.abs(portfolioData.change).toLocaleString('en-IN', { maximumFractionDigits: 2 })} 
-              ({portfolioData.change >= 0 ? '+' : ''}{portfolioData.changePercent.toFixed(2)}%) Today
-            </div>
+          <div className="portfolio-label">NIFTY 50</div>
+          {niftyData ? (
+            <>
+              <div className="portfolio-value">
+                ₹{niftyData.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              </div>
+              <div className={`portfolio-change ${niftyData.change >= 0 ? 'positive' : 'negative'}`}>
+                {niftyData.change >= 0 ? '+' : ''}₹{Math.abs(niftyData.change).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                ({niftyData.change >= 0 ? '+' : ''}{niftyData.changePercent.toFixed(2)}%) Today
+              </div>
+            </>
+          ) : (
+            <div className="portfolio-value">Loading...</div>
           )}
-          
-          {!isNewUser && chartData.length > 0 && (
+
+          {chartData.length > 0 && (
             <div className="chart-container">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <XAxis dataKey="time" stroke="#fff" strokeOpacity={0.5} tick={{ fill: '#fff', fontSize: 10 }} tickLine={false} />
-                  <YAxis hide domain={['dataMin - 50', 'dataMax + 50']} />
+                  <XAxis dataKey="time" stroke="#fff" strokeOpacity={0.5} tick={{ fill: '#fff', fontSize: 10 }} tickLine={false} minTickGap={30} />
+                  <YAxis hide domain={['auto', 'auto']} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1e40af', border: 'none', borderRadius: '8px', color: '#fff' }}
                     labelStyle={{ color: '#fff' }}
-                    formatter={(value: any) => [`₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 'Value']}
+                    formatter={(value: any) => [`₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 'Price']}
                   />
                   <Line type="monotone" dataKey="value" stroke="#fff" strokeWidth={2} dot={false} />
                 </LineChart>
@@ -175,20 +185,20 @@ const Home: React.FC<HomeProps> = ({
       <div className="news-section">
         <h2 className="news-title">Market News</h2>
         {news.map((item, index) => (
-            <div key={index} onClick={() => setSelectedNews(item)} className="news-item clickable">
-              <img src={item.image} alt={item.title} className="news-image" />
-              <div className="news-content">
-                <h3 className="news-headline">{item.title}</h3>
-                <div className="news-meta">
-                  <span>{item.source}</span>
-                  <span>•</span>
-                  <span>{item.time}</span>
-                </div>
+          <div key={index} onClick={() => setSelectedNews(item)} className="news-item clickable">
+            <img src={item.image} alt={item.title} className="news-image" />
+            <div className="news-content">
+              <h3 className="news-headline">{item.title}</h3>
+              <div className="news-meta">
+                <span>{item.source}</span>
+                <span>•</span>
+                <span>{item.time}</span>
               </div>
             </div>
+          </div>
         ))}
       </div>
-      
+
       {/* News Modal */}
       {selectedNews && (
         <div className="news-modal-overlay" onClick={() => setSelectedNews(null)}>
@@ -217,10 +227,10 @@ const Home: React.FC<HomeProps> = ({
                 </div>
               )}
               {selectedNews.url !== '#' && (
-                <a 
-                  href={selectedNews.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={selectedNews.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="news-modal-link"
                 >
                   Read full article →

@@ -40,13 +40,15 @@ interface PortfolioData {
     symbol: string;
     shares: number;
     buyPrice: number;
+    name?: string; // Added name for display
   }>;
 }
 
-const HomePage: React.FC = () => {
-  // CONNECTION TO YOUR BACKEND SERVER
-  const BACKEND_URL = 'http://localhost:3001/api';
+// --- API KEYS ---
+// GNews Key (Keep as is)
+const GNEWS_KEY = '3fdcb86666e1eeb08c7611a418bc3d9e';
 
+const HomePage: React.FC = () => {
   // INITIAL STATE: Default Indian Portfolio
   const [portfolioData, setPortfolioData] = useState<PortfolioData>({
     currentValue: 0,
@@ -54,14 +56,15 @@ const HomePage: React.FC = () => {
     change: 0,
     changePercent: 0,
     holdings: [
-      { symbol: 'RELIANCE', shares: 10, buyPrice: 2400 }, // Reliance Industries
-      { symbol: 'TCS', shares: 5, buyPrice: 3500 },      // Tata Consultancy Services
-      { symbol: 'INFY', shares: 20, buyPrice: 1400 },    // Infosys
-      { symbol: 'TATAMOTORS', shares: 50, buyPrice: 600 } // Tata Motors
+      { symbol: 'RELIANCE.NS', name: 'Reliance Industries', shares: 10, buyPrice: 2400 },
+      { symbol: 'TCS.NS', name: 'Tata Consultancy Svc', shares: 5, buyPrice: 3500 },
+      { symbol: 'INFY.NS', name: 'Infosys', shares: 20, buyPrice: 1400 },
+      { symbol: 'TATAMOTORS.NS', name: 'Tata Motors', shares: 50, buyPrice: 600 }
     ]
   });
 
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [niftyData, setNiftyData] = useState<StockData | null>(null);
   const [topGainers, setTopGainers] = useState<StockData[]>([]);
   const [topLosers, setTopLosers] = useState<StockData[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -79,7 +82,6 @@ const HomePage: React.FC = () => {
     setLoading(true);
     setApiError(null);
     try {
-      // Fetch all data in parallel
       await Promise.all([
         updatePortfolioValue(portfolioData),
         fetchMarketData(),
@@ -87,102 +89,183 @@ const HomePage: React.FC = () => {
       ]);
     } catch (error) {
       console.error("Init failed", error);
-      setApiError("Failed to connect to backend server");
+      setApiError("Failed to fetch live data. Using cached/demo data.");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- 1. Fetch Portfolio Data from Backend ---
+  // Helper to fetch data from Yahoo Finance via CORS Proxy
+  const fetchYahooData = async (symbol: string) => {
+    try {
+      // Using corsproxy.io to bypass CORS for Yahoo Finance
+      const response = await fetch(`https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=5m&range=1d`);
+      const data = await response.json();
+      const result = data.chart.result[0];
+
+      // Process chart data if available
+      let chartPoints: ChartDataPoint[] = [];
+      if (result.timestamp && result.indicators.quote[0].close) {
+        chartPoints = result.timestamp.map((time: number, index: number) => {
+          const val = result.indicators.quote[0].close[index];
+          if (!val) return null;
+          const date = new Date(time * 1000);
+          return {
+            time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            value: val
+          };
+        }).filter((p: any) => p !== null);
+      }
+
+      return {
+        price: result.meta.regularMarketPrice,
+        previousClose: result.meta.chartPreviousClose,
+        change: result.meta.regularMarketPrice - result.meta.chartPreviousClose,
+        changePercent: ((result.meta.regularMarketPrice - result.meta.chartPreviousClose) / result.meta.chartPreviousClose) * 100,
+        chartData: chartPoints
+      };
+    } catch (error) {
+      console.warn(`Failed to fetch ${symbol}`, error);
+      return null;
+    }
+  };
+
+  // --- 1. Fetch Portfolio Data (Yahoo Finance) ---
   const updatePortfolioValue = async (portfolio: PortfolioData) => {
     try {
-      const symbols = portfolio.holdings.map(h => h.symbol);
-      
-      const response = await fetch(`${BACKEND_URL}/portfolio`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbols })
-      });
-
-      if (!response.ok) throw new Error('Backend fetch failed');
-
-      const priceData = await response.json();
-      
-      // Create a map for quick price lookups
-      const priceMap = new Map();
-      priceData.forEach((item: any) => {
-        priceMap.set(item.symbol, item.price);
-      });
-
       let totalValue = 0;
-      portfolio.holdings.forEach(holding => {
-        // Use live price, or fallback to buyPrice if API fails for that stock
-        const currentPrice = priceMap.get(holding.symbol) || holding.buyPrice;
-        totalValue += currentPrice * holding.shares;
-      });
+      let previousTotalValue = 0;
 
-      // Calculate mock previous value for daily change simulation
-      const previousValue = portfolio.previousValue || totalValue * 0.99; 
-      const change = totalValue - previousValue;
-      const changePercent = previousValue > 0 ? (change / previousValue) * 100 : 0;
+      await Promise.all(portfolio.holdings.map(async (holding) => {
+        const data = await fetchYahooData(holding.symbol);
+
+        const currentPrice = data?.price || holding.buyPrice;
+        const previousClose = data?.previousClose || holding.buyPrice;
+
+        totalValue += currentPrice * holding.shares;
+        previousTotalValue += previousClose * holding.shares;
+
+        return holding;
+      }));
+
+      const change = totalValue - previousTotalValue;
+      const changePercent = previousTotalValue > 0 ? (change / previousTotalValue) * 100 : 0;
 
       const updatedPortfolio = {
         ...portfolio,
         currentValue: totalValue,
-        previousValue: previousValue,
+        previousValue: previousTotalValue,
         change,
         changePercent
       };
 
       setPortfolioData(updatedPortfolio);
-      generatePortfolioChart(updatedPortfolio);
+      // generatePortfolioChart(updatedPortfolio); // Removed portfolio chart generation
 
     } catch (err) {
       console.error('Portfolio update failed:', err);
-      setApiError("Is the backend server running?");
+      // setApiError("Check API Keys");
     }
   };
 
-  // --- 2. Fetch Dynamic Market Data (Gainers/Losers) ---
+  // --- 2. Fetch Dynamic Market Data (Yahoo Finance) ---
   const fetchMarketData = async () => {
+    // 1. Fetch Nifty 50 Data
+    const nifty = await fetchYahooData('%5ENSEI');
+    if (nifty) {
+      setNiftyData({
+        symbol: 'NIFTY 50',
+        name: 'Nifty 50',
+        price: nifty.price,
+        change: nifty.change,
+        changePercent: nifty.changePercent
+      });
+      if (nifty.chartData && nifty.chartData.length > 0) {
+        setChartData(nifty.chartData);
+      }
+    }
+
+    // 2. Fetch Watchlist
+    const popularStocks = [
+      { symbol: 'RELIANCE.NS', name: 'Reliance' },
+      { symbol: 'TCS.NS', name: 'TCS' },
+      { symbol: 'HDFCBANK.NS', name: 'HDFC Bank' },
+      { symbol: 'INFY.NS', name: 'Infosys' },
+      { symbol: 'ICICIBANK.NS', name: 'ICICI Bank' },
+      { symbol: 'SBIN.NS', name: 'SBI' },
+      { symbol: 'BHARTIARTL.NS', name: 'Bharti Airtel' },
+      { symbol: 'ITC.NS', name: 'ITC' },
+      { symbol: 'TATAMOTORS.NS', name: 'Tata Motors' },
+      { symbol: 'LT.NS', name: 'L&T' }
+    ];
+
     try {
-      const response = await fetch(`${BACKEND_URL}/market`);
-      if (!response.ok) throw new Error('Backend fetch failed');
-      
-      const data = await response.json();
-      
-      setTopGainers(data.gainers || []);
-      setTopLosers(data.losers || []);
-      
+      const stockPromises = popularStocks.map(async (stock) => {
+        const data = await fetchYahooData(stock.symbol);
+        if (!data) return null;
+
+        return {
+          symbol: stock.symbol.replace('.NS', ''), // Clean symbol
+          name: stock.name,
+          price: data.price,
+          change: data.change,
+          changePercent: data.changePercent,
+          exchange: 'NSE',
+          country: 'IN'
+        } as StockData;
+      });
+
+      const results = (await Promise.all(stockPromises)).filter(s => s !== null && s.price > 0) as StockData[];
+
+      // Sort by change percent
+      const sorted = [...results].sort((a, b) => b.changePercent - a.changePercent);
+
+      setTopGainers(sorted.filter(s => s.changePercent > 0).slice(0, 5));
+      setTopLosers([...sorted].reverse().filter(s => s.changePercent < 0).slice(0, 5));
+
     } catch (err) {
       console.error("Market data fetch failed", err);
-      // We don't block the UI if just market data fails
     }
   };
 
+  // --- 3. Fetch News (GNews) ---
   const fetchNews = async () => {
-    // Static Indian News Data
-    const newsData: NewsItem[] = [
-      {
-        title: 'Sensex hits all-time high led by banking stocks',
-        source: 'LiveMint',
-        time: '2h ago',
-        image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=200&fit=crop',
-        url: '#',
-        description: 'Indian benchmark indices scaled new peaks today...',
-        content: 'The BSE Sensex crossed the 75,000 mark for the first time...'
-      },
-      {
-        title: 'RBI keeps repo rate unchanged at 6.5%',
-        source: 'Economic Times',
-        time: '4h ago',
-        image: 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=200&fit=crop',
-        url: '#',
-        description: 'The Monetary Policy Committee decided to maintain status quo.',
-        content: 'RBI Governor announced that the policy rate will remain unchanged...'
+    try {
+      // Free tier: q=india AND (business OR economy)
+      const response = await fetch(`https://gnews.io/api/v4/top-headlines?category=business&lang=en&country=in&max=5&apikey=${GNEWS_KEY}`);
+
+      if (!response.ok) throw new Error('News fetch failed');
+
+      const data = await response.json();
+
+      if (data.articles) {
+        const newsItems: NewsItem[] = data.articles.map((article: any) => ({
+          title: article.title,
+          source: article.source.name,
+          time: new Date(article.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          image: article.image || 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=200&fit=crop',
+          url: article.url,
+          description: article.description,
+          content: article.content
+        }));
+        setNews(newsItems);
       }
-    ];
-    setNews(newsData);
+    } catch (err) {
+      console.error("News fetch failed", err);
+      // Fallback to static if API fails
+      const fallbackNews: NewsItem[] = [
+        {
+          title: 'Market hits fresh record high; Sensex crosses 75k',
+          source: 'LiveMint',
+          time: '2h ago',
+          image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=200&fit=crop',
+          url: '#',
+          description: 'Indian benchmark indices scaled new peaks today...',
+          content: 'The BSE Sensex crossed the 75,000 mark for the first time...'
+        }
+      ];
+      setNews(fallbackNews);
+    }
   };
 
   const generatePortfolioChart = (portfolio: PortfolioData) => {
@@ -214,8 +297,8 @@ const HomePage: React.FC = () => {
       <div className="loading-container">
         <div className="loading-content">
           <div className="spinner"></div>
-          <div className="loading-text">Loading Indian Markets...</div>
-          <div className="loading-subtext">Connecting to Server...</div>
+          <div className="loading-text">Loading Market Data...</div>
+          <div className="loading-subtext">Fetching live prices...</div>
         </div>
       </div>
     );
@@ -236,30 +319,31 @@ const HomePage: React.FC = () => {
           selectedNews={selectedNews}
           setSelectedNews={setSelectedNews}
           apiError={apiError}
+          niftyData={niftyData}
         />
       )}
-      
+
       {activeScreen === 'chat' && <Chatbot />}
-      
+
       {activeScreen === 'profile' && <Profile />}
 
       {/* Bottom Navigation */}
       <nav className="bottom-nav">
-        <button 
+        <button
           className={`nav-item ${activeScreen === 'home' ? 'active' : ''}`}
           onClick={() => setActiveScreen('home')}
         >
           <HomeIcon size={24} />
           <span className="nav-label">Home</span>
         </button>
-        <button 
+        <button
           className={`nav-item ${activeScreen === 'chat' ? 'active' : ''}`}
           onClick={() => setActiveScreen('chat')}
         >
           <Bot size={24} />
           <span className="nav-label">AI Chat</span>
         </button>
-        <button 
+        <button
           className={`nav-item ${activeScreen === 'profile' ? 'active' : ''}`}
           onClick={() => setActiveScreen('profile')}
         >
