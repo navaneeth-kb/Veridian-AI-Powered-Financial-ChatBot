@@ -1,554 +1,235 @@
-/* ============================================
-   PROFILE COMPONENT - ENHANCED STYLES
-   Modern Fintech Profile Page
-   Complements Tailwind Utility Classes
-   ============================================ */
+/* Profile Specific Styles */
 
-/* ============================================
-   CSS CUSTOM PROPERTIES
-   ============================================ */
-:root {
-  /* Colors - Fintech Palette */
-  --profile-primary: #3b82f6;
-  --profile-primary-dark: #2563eb;
-  --profile-success: #10b981;
-  --profile-danger: #ef4444;
-  --profile-danger-light: #fef2f2;
-  
-  /* Spacing Scale */
-  --profile-space-sm: 0.5rem;
-  --profile-space-md: 1rem;
-  --profile-space-lg: 1.5rem;
-  --profile-space-xl: 2rem;
-  
-  /* Border Radius */
-  --profile-radius-sm: 0.5rem;
-  --profile-radius-md: 0.75rem;
-  --profile-radius-lg: 1rem;
-  --profile-radius-xl: 1.5rem;
-  --profile-radius-full: 9999px;
-  
-  /* Shadows - Layered Depth */
-  --profile-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --profile-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --profile-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --profile-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --profile-shadow-blue: 0 10px 25px -5px rgba(59, 130, 246, 0.25);
-  
-  /* Animation Timing */
-  --profile-transition-fast: 150ms ease;
-  --profile-transition-base: 250ms ease;
-  --profile-transition-slow: 350ms ease;
-  --profile-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
-/* ============================================
-   GLOBAL ENHANCEMENTS
-   ============================================ */
-
-/* Smooth scroll behavior */
-.min-h-screen {
-  scroll-behavior: smooth;
+/* Reusing and extending card styles */
+.profile-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
 }
 
-/* Focus visible for accessibility */
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--profile-primary);
-  outline-offset: 2px;
-  border-radius: var(--profile-radius-sm);
-}
-
-/* ============================================
-   PAGE CONTAINER ENHANCEMENTS
-   ============================================ */
-
-/* Main profile page wrapper - Enhanced with max-width on larger screens */
-.min-h-screen.bg-gray-50 {
-  position: relative;
-  animation: profileFadeIn 0.4s ease-out;
-}
-
-/* Content wrapper - Centered on larger screens */
-.min-h-screen.bg-gray-50 > div:nth-child(2) {
-  max-width: 100%;
-  margin: 0 auto;
-}
-
-@media (min-width: 768px) {
-  .min-h-screen.bg-gray-50 > div:nth-child(2) {
-    max-width: 600px;
-    padding-left: var(--profile-space-lg);
-    padding-right: var(--profile-space-lg);
-  }
-}
-
-@media (min-width: 1024px) {
-  .min-h-screen.bg-gray-50 > div:nth-child(2) {
-    max-width: 700px;
-  }
-}
-
-@media (min-width: 1440px) {
-  .min-h-screen.bg-gray-50 > div:nth-child(2) {
-    max-width: 800px;
-    padding-top: var(--profile-space-xl);
-  }
-}
-
-/* ============================================
-   HEADER ENHANCEMENTS
-   ============================================ */
-
-/* Sticky header with blur backdrop */
-.bg-white.border-b {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(8px);
-  background-color: rgba(255, 255, 255, 0.95);
-  box-shadow: var(--profile-shadow-sm);
-  transition: box-shadow var(--profile-transition-base);
-}
-
-/* ============================================
-   CARD ENHANCEMENTS
-   ============================================ */
-
-/* All profile cards - Staggered fade-in animation */
-.bg-white.rounded-2xl {
-  animation: cardSlideIn 0.4s ease-out backwards;
-  transition: transform var(--profile-transition-base), 
-              box-shadow var(--profile-transition-base);
-}
-
-/* Card hover effect - Subtle lift */
-.bg-white.rounded-2xl:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--profile-shadow-lg);
-}
-
-/* Staggered animation delays */
-.space-y-6 > div:nth-child(1) { animation-delay: 0.05s; }
-.space-y-6 > div:nth-child(2) { animation-delay: 0.1s; }
-.space-y-6 > div:nth-child(3) { animation-delay: 0.15s; }
-.space-y-6 > div:nth-child(4) { animation-delay: 0.2s; }
-.space-y-6 > div:nth-child(5) { animation-delay: 0.25s; }
-.space-y-6 > div:nth-child(6) { animation-delay: 0.3s; }
-
-/* ============================================
-   USER AVATAR ENHANCEMENTS
-   ============================================ */
-
-/* Avatar gradient enhancement with hover effect */
-.bg-gradient-to-br.from-blue-500.to-blue-600 {
-  background-image: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
-  box-shadow: var(--profile-shadow-md), var(--profile-shadow-blue);
-  transition: transform var(--profile-transition-base) var(--profile-spring),
-              box-shadow var(--profile-transition-base);
-  position: relative;
+.profile-card.no-padding {
+  padding: 0;
   overflow: hidden;
 }
 
-/* Avatar shimmer effect */
-.bg-gradient-to-br.from-blue-500.to-blue-600::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  animation: avatarShimmer 3s infinite;
+/* Identity Section */
+.identity-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-@keyframes avatarShimmer {
-  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+.profile-avatar-container {
+  margin-bottom: 1rem;
 }
 
-/* Avatar hover effect */
-.bg-gradient-to-br.from-blue-500.to-blue-600:hover {
-  transform: scale(1.08) rotate(3deg);
-  box-shadow: var(--profile-shadow-xl), var(--profile-shadow-blue);
-}
-
-/* User icon inside avatar */
-.bg-gradient-to-br.from-blue-500.to-blue-600 svg {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
-  transition: transform var(--profile-transition-base);
-}
-
-.bg-gradient-to-br.from-blue-500.to-blue-600:hover svg {
-  transform: scale(1.1);
-}
-
-/* ============================================
-   BADGE ENHANCEMENTS
-   ============================================ */
-
-/* Risk profile badge */
-.bg-blue-50.px-3.py-1.rounded-full {
-  transition: all var(--profile-transition-fast);
-  border: 1px solid transparent;
-}
-
-.bg-blue-50.px-3.py-1.rounded-full:hover {
-  background-color: #dbeafe;
-  border-color: #93c5fd;
-  transform: scale(1.05);
-}
-
-/* ============================================
-   TOGGLE SWITCH ENHANCEMENTS
-   ============================================ */
-
-/* Toggle button - Enhanced interaction */
-.w-11.h-6.rounded-full {
-  cursor: pointer;
-  position: relative;
-  transition: background-color var(--profile-transition-base);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.w-11.h-6.rounded-full:hover {
-  opacity: 0.9;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15),
-              0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.w-11.h-6.rounded-full:active {
-  transform: scale(0.98);
-}
-
-/* Toggle slider - Smooth sliding */
-.w-11.h-6.rounded-full > div {
-  transition: transform var(--profile-transition-base) var(--profile-spring);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-/* ============================================
-   ACTION BUTTONS ENHANCEMENTS
-   ============================================ */
-
-/* Action buttons with chevron - Enhanced hover */
-button.w-full.flex.items-center.justify-between {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-/* Ripple effect background */
-button.w-full.flex.items-center.justify-between::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
+.profile-avatar {
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  background-color: rgba(59, 130, 246, 0.1);
-  transform: translate(-50%, -50%);
-  transition: width var(--profile-transition-slow), 
-              height var(--profile-transition-slow);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
-button.w-full.flex.items-center.justify-between:hover::before {
-  width: 200%;
-  height: 200%;
+.profile-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
 }
 
-/* Chevron slide animation on hover */
-button.w-full.flex.items-center.justify-between:hover svg:last-child {
-  transform: translateX(4px);
-  transition: transform var(--profile-transition-base);
+.profile-email {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
 }
 
-/* Active state */
-button.w-full.flex.items-center.justify-between:active {
-  transform: scale(0.99);
-}
-
-/* ============================================
-   LOGOUT BUTTON ENHANCEMENTS
-   ============================================ */
-
-/* Logout button - Enhanced danger state */
-button.hover\:bg-red-50 {
-  position: relative;
-  transition: all var(--profile-transition-base);
-  box-shadow: var(--profile-shadow-sm);
-}
-
-button.hover\:bg-red-50:hover {
-  box-shadow: var(--profile-shadow-md);
-  transform: translateY(-1px);
-}
-
-button.hover\:bg-red-50:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow: var(--profile-shadow-sm);
-}
-
-/* Logout icon - Subtle rotation on hover */
-button.hover\:bg-red-50:hover svg {
-  transform: rotate(-5deg);
-  transition: transform var(--profile-transition-base);
-}
-
-/* ============================================
-   ICON ENHANCEMENTS
-   ============================================ */
-
-/* All icons - Smooth color transitions */
-svg.text-gray-400 {
-  transition: color var(--profile-transition-fast);
-}
-
-/* Investment profile icons */
-.space-y-4 svg,
-.space-y-3 svg {
-  transition: transform var(--profile-transition-fast);
-}
-
-.space-y-4:hover svg,
-.space-y-3:hover svg {
-  transform: scale(1.1);
-}
-
-/* ============================================
-   TYPOGRAPHY ENHANCEMENTS
-   ============================================ */
-
-/* User name - Subtle text shadow */
-h2.text-xl.font-semibold {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  letter-spacing: -0.01em;
-}
-
-/* Card titles */
-h3.text-sm.font-semibold {
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+.profile-id {
   font-size: 0.75rem;
-  color: #4b5563;
+  color: #94a3b8;
 }
 
-/* Version text - Subtle fade */
-.text-xs.text-gray-400 {
-  opacity: 0.7;
-  transition: opacity var(--profile-transition-fast);
+/* Card Titles */
+.card-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
 }
 
-.text-xs.text-gray-400:hover {
-  opacity: 1;
+/* List Items */
+.profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-/* ============================================
-   RESPONSIVE ENHANCEMENTS
-   ============================================ */
-
-/* Tablet: 768px and up */
-@media (min-width: 768px) {
-  /* Larger avatar on tablets */
-  .bg-gradient-to-br.from-blue-500.to-blue-600 {
-    width: 6rem !important;
-    height: 6rem !important;
-  }
-  
-  .bg-gradient-to-br.from-blue-500.to-blue-600 svg {
-    width: 3rem !important;
-    height: 3rem !important;
-  }
-  
-  /* Larger user name */
-  h2.text-xl.font-semibold {
-    font-size: 1.5rem;
-  }
-  
-  /* More padding on cards */
-  .bg-white.rounded-2xl {
-    padding: 1.75rem !important;
-  }
-  
-  /* Reduced card hover on touch devices */
-  .bg-white.rounded-2xl:hover {
-    transform: translateY(-1px);
-  }
+.profile-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* Desktop: 1024px and up */
-@media (min-width: 1024px) {
-  /* Enhanced hover effects on desktop */
-  .bg-white.rounded-2xl:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--profile-shadow-xl);
-  }
-  
-  /* Larger spacing */
-  .space-y-6 {
-    gap: 2rem;
-  }
+.item-label {
+  font-size: 0.875rem;
+  color: #64748b;
 }
 
-/* Large Desktop: 1440px and up */
-@media (min-width: 1440px) {
-  /* More generous spacing */
-  .bg-white.rounded-2xl {
-    padding: 2rem !important;
-  }
-  
-  .space-y-6 {
-    gap: 2.5rem;
-  }
+.item-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #0f172a;
 }
 
-/* ============================================
-   ANIMATIONS & KEYFRAMES
-   ============================================ */
-
-/* Profile page fade in */
-@keyframes profileFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.item-value.badge {
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.75rem;
 }
 
-/* Card slide in from bottom */
-@keyframes cardSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Item with Icon */
+.item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-/* ============================================
-   ACCESSIBILITY ENHANCEMENTS
-   ============================================ */
-
-/* Focus states for keyboard navigation */
-button:focus-visible {
-  outline: 2px solid var(--profile-primary);
-  outline-offset: 2px;
+.item-icon {
+  color: #94a3b8;
 }
 
-/* Focus indicators for toggle */
-.w-11.h-6.rounded-full:focus-visible {
-  outline: 2px solid var(--profile-primary);
-  outline-offset: 3px;
+.item-text {
+  font-size: 0.875rem;
+  color: #0f172a;
 }
 
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .bg-white.rounded-2xl {
-    border: 2px solid #000;
-  }
-  
-  button {
-    border: 2px solid currentColor;
-  }
-  
-  .bg-gradient-to-br.from-blue-500.to-blue-600 {
-    border: 3px solid #fff;
-  }
+/* Action Buttons */
+.action-button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-/* Reduced motion for accessibility */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-  
-  .bg-gradient-to-br.from-blue-500.to-blue-600::before {
-    animation: none;
-  }
+.action-button:hover {
+  background: #f8fafc;
 }
 
-/* ============================================
-   PRINT STYLES
-   ============================================ */
-
-@media print {
-  .min-h-screen.bg-gray-50 {
-    background-color: white;
-  }
-  
-  .bg-white.rounded-2xl {
-    box-shadow: none;
-    border: 1px solid #e5e7eb;
-    page-break-inside: avoid;
-  }
-  
-  /* Hide interactive elements */
-  button,
-  .w-11.h-6.rounded-full {
-    display: none;
-  }
-  
-  /* Hide version footer */
-  .text-center.pt-2 {
-    display: none;
-  }
+.action-button.border-bottom {
+  border-bottom: 1px solid #f1f5f9;
 }
 
-/* ============================================
-   DARK MODE SUPPORT (Optional)
-   ============================================ */
-
-@media (prefers-color-scheme: dark) {
-  .min-h-screen.bg-gray-50 {
-    background-color: #111827;
-  }
-  
-  .bg-white {
-    background-color: #1f2937;
-  }
-  
-  .text-gray-900 {
-    color: #f3f4f6;
-  }
-  
-  .text-gray-500 {
-    color: #9ca3af;
-  }
-  
-  .border-gray-100,
-  .border-gray-200 {
-    border-color: #374151;
-  }
+.item-arrow {
+  color: #cbd5e1;
 }
 
-/* ============================================
-   PERFORMANCE OPTIMIZATIONS
-   ============================================ */
-
-/* GPU acceleration for smooth animations */
-.bg-white.rounded-2xl,
-.bg-gradient-to-br.from-blue-500.to-blue-600,
-button {
-  will-change: transform;
+/* Toggle Switch */
+.toggle-switch {
+  width: 44px;
+  height: 24px;
+  background: #cbd5e1;
+  border-radius: 9999px;
+  position: relative;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s ease;
+  padding: 0;
 }
 
-/* Force GPU rendering */
-@media (min-width: 768px) {
-  .bg-white.rounded-2xl {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-  }
+.toggle-switch.active {
+  background: #2563eb;
+}
+
+.toggle-thumb {
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-switch.active .toggle-thumb {
+  transform: translateX(20px);
+}
+
+/* Logout Button */
+.logout-button {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.logout-button:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.logout-button:active {
+  transform: translateY(0);
+}
+
+/* Version Text */
+.version-text {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 1rem;
+}
+
+/* Helpers */
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.object-cover {
+  object-fit: cover;
 }
