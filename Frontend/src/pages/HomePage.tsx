@@ -268,29 +268,6 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const generatePortfolioChart = (portfolio: PortfolioData) => {
-    const data: ChartDataPoint[] = [];
-    const now = new Date();
-    const startValue = portfolio.previousValue || portfolio.currentValue * 0.95;
-    const endValue = portfolio.currentValue;
-    const points = 50;
-
-    for (let i = 0; i < points; i++) {
-      const progress = i / (points - 1);
-      const time = new Date(now.getTime() - (points - i - 1) * 10 * 60000);
-      const hour = time.getHours();
-      let timeLabel = '';
-      if (i % 10 === 0) {
-        const ampm = hour >= 12 ? 'pm' : 'am';
-        const displayHour = hour % 12 || 12;
-        timeLabel = `${displayHour} ${ampm}`;
-      }
-      const volatility = (Math.random() - 0.5) * (endValue - startValue) * 0.1;
-      const value = startValue + (endValue - startValue) * progress + volatility;
-      data.push({ time: timeLabel, value: Math.max(0, value) });
-    }
-    setChartData(data);
-  };
 
   if (loading) {
     return (

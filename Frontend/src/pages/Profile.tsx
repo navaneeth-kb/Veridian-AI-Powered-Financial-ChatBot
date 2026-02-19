@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Bell, Moon, DollarSign, FileText, HelpCircle, LogOut, ChevronRight } from 'lucide-react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
+// @ts-ignore
 import { auth } from '../firebase';
 import './HomePage.css';
 import './profile.css';

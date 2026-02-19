@@ -15,9 +15,6 @@ interface StockData {
   country?: string;
 }
 
-interface NiftyData extends StockData {
-  // reusing StockData for now as it fits
-}
 
 interface NewsItem {
   title: string;
@@ -61,7 +58,6 @@ interface HomeProps {
 }
 
 const Home: React.FC<HomeProps> = ({
-  portfolioData,
   chartData,
   topGainers,
   topLosers,
@@ -94,8 +90,6 @@ const Home: React.FC<HomeProps> = ({
       </div>
     </div>
   );
-
-  const isNewUser = portfolioData.currentValue === 0;
 
   return (
     <>

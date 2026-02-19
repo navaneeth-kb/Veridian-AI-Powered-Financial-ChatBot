@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./splash.css";
+// @ts-ignore
 import { auth, googleProvider } from "../firebase";
 import {
   signInWithEmailAndPassword,
