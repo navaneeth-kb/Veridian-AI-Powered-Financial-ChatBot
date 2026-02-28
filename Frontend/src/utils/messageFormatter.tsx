@@ -24,7 +24,7 @@ export const formatMessage = (content: string): React.ReactNode => {
     // Handle bullet points
     if (line.trim().match(/^[•\-\*]\s/)) {
       return (
-        <div key={lineIdx} className="message-bullet">
+        <div key={lineIdx} className="ml-4 mb-1 relative before:content-['•'] before:absolute before:-left-4 before:text-teal-400 before:font-bold">
           {formatLine(line.replace(/^[•\-\*]\s/, ''))}
         </div>
       );
@@ -33,7 +33,7 @@ export const formatMessage = (content: string): React.ReactNode => {
     // Handle numbered lists
     if (line.trim().match(/^\d+\.\s/)) {
       return (
-        <div key={lineIdx} className="message-numbered">
+        <div key={lineIdx} className="mb-1">
           {formatLine(line)}
         </div>
       );
@@ -42,7 +42,7 @@ export const formatMessage = (content: string): React.ReactNode => {
     // Handle bold text (**text**)
     if (line.includes('**')) {
       return (
-        <div key={lineIdx} className="message-line">
+        <div key={lineIdx} className="mb-1">
           {formatBoldText(line)}
         </div>
       );
@@ -50,7 +50,7 @@ export const formatMessage = (content: string): React.ReactNode => {
 
     // Regular line
     return (
-      <div key={lineIdx} className="message-line">
+      <div key={lineIdx} className="mb-1">
         {formatLine(line)}
       </div>
     );
@@ -71,26 +71,26 @@ const formatLine = (text: string): React.ReactNode => {
 
     // Check if word matches any keyword category
     if (KEYWORDS.risk.some(keyword => lowerWord.includes(keyword))) {
-      return <span key={idx} className="keyword-risk">{word}</span>;
+      return <span key={idx} className="text-red-600 font-semibold">{word}</span>;
     }
 
     if (KEYWORDS.positive.some(keyword => lowerWord.includes(keyword))) {
-      return <span key={idx} className="keyword-positive">{word}</span>;
+      return <span key={idx} className="text-emerald-600 font-semibold">{word}</span>;
     }
 
     if (KEYWORDS.cost.some(keyword => lowerWord.includes(keyword))) {
-      return <span key={idx} className="keyword-cost">{word}</span>;
+      return <span key={idx} className="text-amber-500 font-semibold">{word}</span>;
     }
 
     if (KEYWORDS.metrics.some(keyword => lowerWord.includes(keyword))) {
-      return <span key={idx} className="keyword-metric">{word}</span>;
+      return <span key={idx} className="text-blue-600 font-semibold uppercase text-[13px]">{word}</span>;
     }
 
     // Highlight percentages
     if (word.match(/[+-]?\d+\.?\d*%/)) {
       const isPositive = word.startsWith('+') || (!word.startsWith('-') && parseFloat(word) > 0);
       return (
-        <span key={idx} className={isPositive ? 'positive' : 'negative'}>
+        <span key={idx} className={isPositive ? 'text-emerald-600 font-semibold' : 'text-red-600 font-semibold'}>
           {word}
         </span>
       );
@@ -126,9 +126,9 @@ export const formatPercentages = (content: string): React.ReactNode => {
         <span key={idx}>
           {parts.map((part, i) => {
             if (part.match(/\+\d+\.?\d+%/)) {
-              return <span key={i} className="positive">{part}</span>;
+              return <span key={i} className="text-emerald-600 font-semibold">{part}</span>;
             } else if (part.match(/-\d+\.?\d+%/)) {
-              return <span key={i} className="negative">{part}</span>;
+              return <span key={i} className="text-red-600 font-semibold">{part}</span>;
             }
             return <span key={i}>{part}</span>;
           })}

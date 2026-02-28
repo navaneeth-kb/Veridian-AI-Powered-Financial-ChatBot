@@ -3,7 +3,6 @@ import { Home as HomeIcon, Bot, User } from 'lucide-react';
 import Home from './Home';
 import Chatbot from './Chatbot';
 import Profile from './Profile';
-import './HomePage.css';
 
 // --- Interfaces ---
 interface StockData {
@@ -46,7 +45,7 @@ interface PortfolioData {
 
 // --- API KEYS ---
 // GNews Key (Keep as is)
-const GNEWS_KEY = '3fdcb86666e1eeb08c7611a418bc3d9e';
+// const GNEWS_KEY = '3fdcb86666e1eeb08c7611a418bc3d9e';
 
 const HomePage: React.FC = () => {
   // INITIAL STATE: Default Indian Portfolio
@@ -281,18 +280,18 @@ const HomePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-content">
-          <div className="spinner"></div>
-          <div className="loading-text">Loading Market Data...</div>
-          <div className="loading-subtext">Fetching live prices...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center text-slate-900">
+          <div className="w-[50px] h-[50px] border-[3px] border-slate-200 border-t-blue-500 rounded-full mx-auto mb-4 animate-spin"></div>
+          <div className="text-lg font-semibold mb-2 text-slate-900">Loading Market Data...</div>
+          <div className="text-sm text-slate-500">Fetching live prices...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard">
+    <div className="min-h-screen bg-white p-6 pb-[100px] sm:p-4 sm:pb-[80px]">
       {/* Conditional Screen Rendering */}
       {activeScreen === 'home' && (
         <Home
@@ -315,27 +314,27 @@ const HomePage: React.FC = () => {
       {activeScreen === 'profile' && <Profile />}
 
       {/* Bottom Navigation */}
-      <nav className="bottom-nav">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white flex justify-around p-4 border-t border-slate-200 z-[100] shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         <button
-          className={`nav-item ${activeScreen === 'home' ? 'active' : ''}`}
+          className={`flex flex-col items-center gap-1 bg-none border-none cursor-pointer transition-colors duration-200 text-xs p-2 rounded-lg hover:bg-slate-50 hover:text-slate-700 ${activeScreen === 'home' ? 'text-blue-500 bg-blue-50' : 'text-slate-500'}`}
           onClick={() => setActiveScreen('home')}
         >
           <HomeIcon size={24} />
-          <span className="nav-label">Home</span>
+          <span className="text-xs font-semibold">Home</span>
         </button>
         <button
-          className={`nav-item ${activeScreen === 'chat' ? 'active' : ''}`}
+          className={`flex flex-col items-center gap-1 bg-none border-none cursor-pointer transition-colors duration-200 text-xs p-2 rounded-lg hover:bg-slate-50 hover:text-slate-700 ${activeScreen === 'chat' ? 'text-blue-500 bg-blue-50' : 'text-slate-500'}`}
           onClick={() => setActiveScreen('chat')}
         >
           <Bot size={24} />
-          <span className="nav-label">AI Chat</span>
+          <span className="text-xs font-semibold">AI Chat</span>
         </button>
         <button
-          className={`nav-item ${activeScreen === 'profile' ? 'active' : ''}`}
+          className={`flex flex-col items-center gap-1 bg-none border-none cursor-pointer transition-colors duration-200 text-xs p-2 rounded-lg hover:bg-slate-50 hover:text-slate-700 ${activeScreen === 'profile' ? 'text-blue-500 bg-blue-50' : 'text-slate-500'}`}
           onClick={() => setActiveScreen('profile')}
         >
           <User size={24} />
-          <span className="nav-label">Profile</span>
+          <span className="text-xs font-semibold">Profile</span>
         </button>
       </nav>
     </div>
