@@ -133,7 +133,9 @@ const Home: React.FC<HomeProps> = ({
   return (
     <>
       <div className="mb-6">
-        <div className="text-slate-500 text-sm mb-1">Hello, Investor</div>
+        <div className="text-slate-500 text-sm mb-1">
+          {user?.displayName ? `Hello, ${user.displayName.split(' ')[0]}` : 'Hello, Investor'}
+        </div>
         <h1 className="text-slate-900 text-2xl sm:text-3xl font-bold mb-2">Dashboard</h1>
         {apiError && (
           <div className="bg-red-100 text-red-800 px-4 py-3 rounded-lg text-sm text-center border border-red-300 animate-[fadeIn_0.3s_ease] mt-2">
