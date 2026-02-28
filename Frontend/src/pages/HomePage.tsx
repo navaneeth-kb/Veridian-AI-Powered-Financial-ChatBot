@@ -98,30 +98,46 @@ const HomePage: React.FC = () => {
   // Helper to fetch data from Yahoo Finance via CORS Proxy
   const fetchYahooData = async (symbol: string) => {
     try {
-      // Using corsproxy.io to bypass CORS for Yahoo Finance
-      const response = await fetch(`https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=5m&range=1d`);
-      const data = await response.json();
-      const result = data.chart.result[0];
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/stock/${symbol}`
+      );
 
-      // Process chart data if available
+      const data = await response.json();
+
+      const result = data?.chart?.result?.[0];
+      if (!result) return null;
+
       let chartPoints: ChartDataPoint[] = [];
-      if (result.timestamp && result.indicators.quote[0].close) {
-        chartPoints = result.timestamp.map((time: number, index: number) => {
-          const val = result.indicators.quote[0].close[index];
-          if (!val) return null;
-          const date = new Date(time * 1000);
-          return {
-            time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            value: val
-          };
-        }).filter((p: any) => p !== null);
+
+      if (result.timestamp && result.indicators?.quote?.[0]?.close) {
+        chartPoints = result.timestamp
+          .map((time: number, index: number) => {
+            const val = result.indicators.quote[0].close[index];
+            if (!val) return null;
+
+            const date = new Date(time * 1000);
+            return {
+              time: date.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              value: val
+            };
+          })
+          .filter(Boolean);
       }
 
       return {
         price: result.meta.regularMarketPrice,
         previousClose: result.meta.chartPreviousClose,
-        change: result.meta.regularMarketPrice - result.meta.chartPreviousClose,
-        changePercent: ((result.meta.regularMarketPrice - result.meta.chartPreviousClose) / result.meta.chartPreviousClose) * 100,
+        change:
+          result.meta.regularMarketPrice -
+          result.meta.chartPreviousClose,
+        changePercent:
+          ((result.meta.regularMarketPrice -
+            result.meta.chartPreviousClose) /
+            result.meta.chartPreviousClose) *
+          100,
         chartData: chartPoints
       };
     } catch (error) {
@@ -231,10 +247,11 @@ const HomePage: React.FC = () => {
   // --- 3. Fetch News (GNews) ---
   const fetchNews = async () => {
     try {
-      // Free tier: q=india AND (business OR economy)
-      const response = await fetch(`https://gnews.io/api/v4/top-headlines?category=business&lang=en&country=in&max=5&apikey=${GNEWS_KEY}`);
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/news"
+      );
 
-      if (!response.ok) throw new Error('News fetch failed');
+      if (!response.ok) throw new Error("News fetch failed");
 
       const data = await response.json();
 
@@ -242,29 +259,22 @@ const HomePage: React.FC = () => {
         const newsItems: NewsItem[] = data.articles.map((article: any) => ({
           title: article.title,
           source: article.source.name,
-          time: new Date(article.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          image: article.image || 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=200&fit=crop',
+          time: new Date(article.publishedAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          image:
+            article.image ||
+            'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=200&fit=crop',
           url: article.url,
           description: article.description,
           content: article.content
         }));
+
         setNews(newsItems);
       }
     } catch (err) {
       console.error("News fetch failed", err);
-      // Fallback to static if API fails
-      const fallbackNews: NewsItem[] = [
-        {
-          title: 'Market hits fresh record high; Sensex crosses 75k',
-          source: 'LiveMint',
-          time: '2h ago',
-          image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=200&fit=crop',
-          url: '#',
-          description: 'Indian benchmark indices scaled new peaks today...',
-          content: 'The BSE Sensex crossed the 75,000 mark for the first time...'
-        }
-      ];
-      setNews(fallbackNews);
     }
   };
 
