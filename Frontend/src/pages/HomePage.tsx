@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Home as HomeIcon, Bot, User } from 'lucide-react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import type { User as FirebaseUser } from 'firebase/auth';
+// @ts-ignore
+import { auth, db } from '../firebase';
 import Home from './Home';
 import Chatbot from './Chatbot';
 import Profile from './Profile';
@@ -30,16 +35,31 @@ interface ChartDataPoint {
   value: number;
 }
 
-interface PortfolioData {
+export interface FirestorePortfolioItem {
+  id: string; // Document ID
+  symbol: string;
+  name?: string;
+  quantity: number;
+  buyPrice: number;
+  createdAt: any;
+}
+
+export interface PortfolioData {
   currentValue: number;
+  investedValue: number; // Added for Summary
   previousValue: number;
   change: number;
   changePercent: number;
   holdings: Array<{
+    id: string; // Map to doc ID
     symbol: string;
     shares: number;
     buyPrice: number;
-    name?: string; // Added name for display
+    name?: string;
+    currentPrice?: number;
+    totalValue?: number;
+    profitLoss?: number;
+    profitLossPercent?: number;
   }>;
 }
 
@@ -48,18 +68,16 @@ interface PortfolioData {
 // const GNEWS_KEY = '3fdcb86666e1eeb08c7611a418bc3d9e';
 
 const HomePage: React.FC = () => {
-  // INITIAL STATE: Default Indian Portfolio
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+
+  // INITIAL STATE: Empty Portfolio
   const [portfolioData, setPortfolioData] = useState<PortfolioData>({
     currentValue: 0,
+    investedValue: 0,
     previousValue: 0,
     change: 0,
     changePercent: 0,
-    holdings: [
-      { symbol: 'RELIANCE.NS', name: 'Reliance Industries', shares: 10, buyPrice: 2400 },
-      { symbol: 'TCS.NS', name: 'Tata Consultancy Svc', shares: 5, buyPrice: 3500 },
-      { symbol: 'INFY.NS', name: 'Infosys', shares: 20, buyPrice: 1400 },
-      { symbol: 'TATAMOTORS.NS', name: 'Tata Motors', shares: 50, buyPrice: 600 }
-    ]
+    holdings: []
   });
 
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
@@ -75,6 +93,34 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     initializeData();
+
+    // Auth & Firestore Listener
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const q = query(collection(db, 'portfolios'), where('uid', '==', currentUser.uid));
+        const unsubscribeDb = onSnapshot(q, (snapshot) => {
+          const items: FirestorePortfolioItem[] = [];
+          snapshot.forEach((doc) => {
+            items.push({ id: doc.id, ...doc.data() } as FirestorePortfolioItem);
+          });
+          processPortfolioItems(items);
+        });
+
+        return () => unsubscribeDb();
+      } else {
+        setPortfolioData({
+          currentValue: 0,
+          investedValue: 0,
+          previousValue: 0,
+          change: 0,
+          changePercent: 0,
+          holdings: []
+        });
+      }
+    });
+
+    return () => unsubscribeAuth();
   }, []);
 
   const initializeData = async () => {
@@ -82,7 +128,6 @@ const HomePage: React.FC = () => {
     setApiError(null);
     try {
       await Promise.all([
-        updatePortfolioValue(portfolioData),
         fetchMarketData(),
         fetchNews()
       ]);
@@ -145,41 +190,57 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // --- 1. Fetch Portfolio Data (Yahoo Finance) ---
-  const updatePortfolioValue = async (portfolio: PortfolioData) => {
+  // --- 1. Fetch Portfolio Data (Yahoo Finance + Firestore) ---
+  const processPortfolioItems = async (items: FirestorePortfolioItem[]) => {
     try {
       let totalValue = 0;
       let previousTotalValue = 0;
+      let totalInvested = 0;
 
-      await Promise.all(portfolio.holdings.map(async (holding) => {
-        const data = await fetchYahooData(holding.symbol);
+      const updatedHoldings = await Promise.all(items.map(async (item) => {
+        const data = await fetchYahooData(item.symbol);
 
-        const currentPrice = data?.price || holding.buyPrice;
-        const previousClose = data?.previousClose || holding.buyPrice;
+        const currentPrice = data?.price || item.buyPrice;
+        const previousClose = data?.previousClose || item.buyPrice;
+        const itemValue = currentPrice * item.quantity;
+        const itemInvested = item.buyPrice * item.quantity;
 
-        totalValue += currentPrice * holding.shares;
-        previousTotalValue += previousClose * holding.shares;
+        totalValue += itemValue;
+        previousTotalValue += previousClose * item.quantity;
+        totalInvested += itemInvested;
 
-        return holding;
+        const profitLoss = itemValue - itemInvested;
+        const profitLossPercent = itemInvested > 0 ? (profitLoss / itemInvested) * 100 : 0;
+
+        return {
+          id: item.id,
+          symbol: item.symbol,
+          name: item.name || item.symbol,
+          shares: item.quantity,
+          buyPrice: item.buyPrice,
+          currentPrice: currentPrice,
+          totalValue: itemValue,
+          profitLoss: profitLoss,
+          profitLossPercent: profitLossPercent
+        };
       }));
 
       const change = totalValue - previousTotalValue;
       const changePercent = previousTotalValue > 0 ? (change / previousTotalValue) * 100 : 0;
 
-      const updatedPortfolio = {
-        ...portfolio,
+      const updatedPortfolio: PortfolioData = {
         currentValue: totalValue,
+        investedValue: totalInvested,
         previousValue: previousTotalValue,
         change,
-        changePercent
+        changePercent,
+        holdings: updatedHoldings
       };
 
       setPortfolioData(updatedPortfolio);
-      // generatePortfolioChart(updatedPortfolio); // Removed portfolio chart generation
 
     } catch (err) {
       console.error('Portfolio update failed:', err);
-      // setApiError("Check API Keys");
     }
   };
 
@@ -295,6 +356,7 @@ const HomePage: React.FC = () => {
       {/* Conditional Screen Rendering */}
       {activeScreen === 'home' && (
         <Home
+          user={user}
           portfolioData={portfolioData}
           chartData={chartData}
           topGainers={topGainers}
