@@ -1,20 +1,11 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter
 import requests
 
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+router = APIRouter()
 
 Y_HEADERS = {"User-Agent": "Mozilla/5.0"}
 
-@app.get("/api/stock/{symbol}")
+@router.get("/api/stock/{symbol}")
 def get_stock(symbol: str):
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=5m&range=1d"
@@ -24,7 +15,7 @@ def get_stock(symbol: str):
         return {"error": str(e)}
 
 
-@app.get("/api/news")
+@router.get("/api/news")
 def get_news():
     api_key = "3fdcb86666e1eeb08c7611a418bc3d9e"
 

@@ -5,15 +5,15 @@
  */
 
 // Get API URL from environment variable or use default
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // API timeout in milliseconds
 export const API_TIMEOUT = 30000; // 30 seconds
 
 // API endpoints
 export const API_ENDPOINTS = {
-  CHAT: '/chat',
-  HEALTH: '/health',
+  CHAT: '/ask',
+  HEALTH: '/',
 } as const;
 
 export const getApiUrl = (endpoint: string): string => {
