@@ -20,31 +20,21 @@ const Chatbot: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Focus input on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  /**
-   * Handle sending a message
-   */
   const handleSendMessage = async (messageText?: string) => {
     const textToSend = messageText || inputValue.trim();
 
-    // Validate input
-    if (!textToSend || isLoading) {
-      return;
-    }
+    if (!textToSend || isLoading) return;
 
-    // Clear input immediately
     setInputValue('');
 
-    // Add user message to chat
     const userMessage: Message = {
       id: Date.now(),
       type: 'user',
@@ -54,7 +44,6 @@ const Chatbot: React.FC = () => {
     };
     setMessages(prev => [...prev, userMessage]);
 
-    // Add loading indicator
     const loadingMessage: Message = {
       id: Date.now() + 1,
       type: 'loading',
@@ -66,10 +55,8 @@ const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Call API
       const aiResponse = await chatService.sendMessage(textToSend);
 
-      // Remove loading message and add AI response
       setMessages(prev => {
         const withoutLoading = prev.filter(msg => msg.type !== 'loading');
         return [
@@ -83,11 +70,8 @@ const Chatbot: React.FC = () => {
           }
         ];
       });
-
     } catch (error: any) {
       console.error('Chat error:', error);
-
-      // Remove loading message and show error
       setMessages(prev => {
         const withoutLoading = prev.filter(msg => msg.type !== 'loading');
         return [
@@ -106,9 +90,6 @@ const Chatbot: React.FC = () => {
     }
   };
 
-  /**
-   * Handle Enter key press
-   */
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -116,19 +97,12 @@ const Chatbot: React.FC = () => {
     }
   };
 
-  /**
-   * Handle action chip click
-   */
   const handleChipClick = (chipText: string) => {
     setInputValue(chipText);
     inputRef.current?.focus();
   };
 
-  /**
-   * Render message content with formatting
-   */
   const renderMessageContent = (message: Message) => {
-    // Loading message
     if (message.type === 'loading') {
       return (
         <div className="flex items-center gap-1 p-2">
@@ -139,7 +113,6 @@ const Chatbot: React.FC = () => {
       );
     }
 
-    // Error message
     if (message.type === 'error') {
       return (
         <div className="flex flex-col gap-2">
@@ -147,7 +120,6 @@ const Chatbot: React.FC = () => {
           <button
             className="self-start py-1.5 px-3 bg-red-500 text-white border-none rounded-md text-xs font-medium cursor-pointer transition-colors hover:bg-red-600"
             onClick={() => {
-              // Get the last user message and retry
               const lastUserMessage = [...messages].reverse().find(m => m.type === 'user');
               if (lastUserMessage) {
                 handleSendMessage(lastUserMessage.content);
@@ -160,11 +132,9 @@ const Chatbot: React.FC = () => {
       );
     }
 
-    // Regular message with formatting
     return <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{formatMessage(message.content)}</div>;
   };
 
-  // Action chips
   const actionChips = [
     'Explain compound interest',
     'What are mutual funds?',
@@ -173,14 +143,11 @@ const Chatbot: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col h-screen bg-[#f0f9f4]">
+    // Changed to `fixed inset-0` to guarantee it locks to the viewport edges
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#f0f9f4]">
+      
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4 flex items-center shadow-sm">
-        <button className="mr-3 text-gray-600 bg-transparent border-none cursor-pointer p-1 flex items-center transition-colors hover:text-gray-800" aria-label="Back">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+      <div className="shrink-0 bg-white border-b border-gray-200 p-4 flex items-center shadow-sm z-20">
         <h1 className="text-lg font-semibold text-gray-800">AI Financial Advisor</h1>
       </div>
 
@@ -191,27 +158,26 @@ const Chatbot: React.FC = () => {
             key={message.id}
             className={`flex items-start gap-3 ${message.type === 'user' ? 'flex-row-reverse' : ''}`}
           >
-            {/* Avatar */}
-            <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg ${message.type === 'assistant' ? 'bg-teal-400' :
+            <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
+                message.type === 'assistant' ? 'bg-teal-400' :
                 message.type === 'user' ? 'bg-orange-400' :
-                  message.type === 'loading' ? 'bg-slate-400' :
-                    'bg-red-400'
+                message.type === 'loading' ? 'bg-slate-400' :
+                'bg-red-400'
               }`}>
               {message.avatar}
             </div>
 
-            {/* Message Bubble */}
-            <div className={`max-w-[75%] rounded-2xl py-3 px-4 shadow-sm bg-white ${message.type === 'assistant' ? 'rounded-tl-none' :
+            <div className={`max-w-[75%] rounded-2xl py-3 px-4 shadow-sm bg-white ${
+                message.type === 'assistant' ? 'rounded-tl-none' :
                 message.type === 'user' ? 'rounded-tr-none border-l-4 border-orange-400' :
-                  message.type === 'error' ? 'bg-red-100 border-l-4 border-red-500' :
-                    'bg-slate-100'
+                message.type === 'error' ? 'bg-red-100 border-l-4 border-red-500' :
+                'bg-slate-100'
               }`}>
               {renderMessageContent(message)}
             </div>
           </div>
         ))}
 
-        {/* Action Chips - only show when not loading */}
         {!isLoading && messages.length < 4 && (
           <div className="flex gap-2 flex-wrap pt-2">
             {actionChips.map((chip, idx) => (
@@ -231,14 +197,12 @@ const Chatbot: React.FC = () => {
       </div>
 
       {/* Bottom Input Bar */}
-      <div className="bg-white border-t border-gray-200 py-3 px-4 shadow-[0_-4px_6px_rgba(0,0,0,0.05)]">
+      <div className="shrink-0 bg-white border-t border-gray-200 mb-23 py-3 px-4 shadow-[0_-4px_6px_rgba(0,0,0,0.05)] z-20">
         <div className="flex items-center gap-2">
-          {/* Plus Button */}
           <button className="shrink-0 w-10 h-10 flex items-center justify-center text-gray-600 bg-transparent border-none rounded-full cursor-pointer transition-colors hover:bg-gray-100" aria-label="Add attachment">
             <Plus size={24} />
           </button>
 
-          {/* Input Field */}
           <div className="flex-1 bg-gray-100 rounded-full py-2 px-4 flex items-center gap-2">
             <input
               ref={inputRef}
@@ -256,7 +220,6 @@ const Chatbot: React.FC = () => {
             </button>
           </div>
 
-          {/* Send Button */}
           <button
             className={`shrink-0 w-12 h-12 bg-blue-900 rounded-full flex items-center justify-center text-white border-none cursor-pointer shadow-md transition-colors hover:not(:disabled):bg-blue-800 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:opacity-60 ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
             onClick={() => handleSendMessage()}
