@@ -5,14 +5,35 @@ import { signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 // @ts-ignore
 import { auth } from '../firebase';
+import TermsPrivacyModal from '../components/TermsPrivacyModal';
+import HelpSupportModal from '../components/HelpSupportModal';
 
-const Profile: React.FC = () => {
+interface ProfileProps {
+  setNavHidden?: (hidden: boolean) => void;
+}
+
+const Profile: React.FC<ProfileProps> = ({ setNavHidden }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+
+  useEffect(() => {
+    if (setNavHidden) {
+      setNavHidden(showTerms || showHelp);
+    }
+    
+    // Return a cleanup function to ensure nav is shown when component unmounts
+    return () => {
+      if (setNavHidden) {
+        setNavHidden(false);
+      }
+    };
+  }, [showTerms, showHelp, setNavHidden]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -125,7 +146,10 @@ const Profile: React.FC = () => {
 
         {/* App & Account Actions */}
         <div className="bg-white rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-slate-200 overflow-hidden">
-          <button className="w-full flex justify-between items-center px-6 py-5 bg-transparent border-none cursor-pointer transition-colors duration-200 hover:bg-slate-50 border-b border-slate-100">
+          <button 
+            onClick={() => setShowTerms(true)}
+            className="w-full flex justify-between items-center px-6 py-5 bg-transparent border-none cursor-pointer transition-colors duration-200 hover:bg-slate-50 border-b border-slate-100"
+          >
             <div className="flex items-center gap-3">
               <FileText size={20} className="text-slate-400" />
               <span className="text-sm text-slate-900">Terms & Privacy</span>
@@ -133,7 +157,10 @@ const Profile: React.FC = () => {
             <ChevronRight size={20} className="text-slate-300" />
           </button>
 
-          <button className="w-full flex justify-between items-center px-6 py-5 bg-transparent border-none cursor-pointer transition-colors duration-200 hover:bg-slate-50">
+          <button 
+            onClick={() => setShowHelp(true)}
+            className="w-full flex justify-between items-center px-6 py-5 bg-transparent border-none cursor-pointer transition-colors duration-200 hover:bg-slate-50"
+          >
             <div className="flex items-center gap-3">
               <HelpCircle size={20} className="text-slate-400" />
               <span className="text-sm text-slate-900">Help & Support</span>
@@ -157,6 +184,9 @@ const Profile: React.FC = () => {
           Version 1.2.0
         </div>
       </div>
+
+      <TermsPrivacyModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+      <HelpSupportModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </>
   );
 

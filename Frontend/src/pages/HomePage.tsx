@@ -90,6 +90,7 @@ const HomePage: React.FC = () => {
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [activeScreen, setActiveScreen] = useState<'home' | 'chat' | 'profile'>('home');
+  const [navHidden, setNavHidden] = useState<boolean>(false);
 
   useEffect(() => {
     initializeData();
@@ -373,11 +374,12 @@ const HomePage: React.FC = () => {
 
       {activeScreen === 'chat' && <Chatbot />}
 
-      {activeScreen === 'profile' && <Profile />}
+      {activeScreen === 'profile' && <Profile setNavHidden={setNavHidden} />}
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white flex justify-around p-4 border-t border-slate-200 z-[100] shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <button
+      {!navHidden && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-white flex justify-around p-4 border-t border-slate-200 z-[100] shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+          <button
           className={`flex flex-col items-center gap-1 bg-none border-none cursor-pointer transition-colors duration-200 text-xs p-2 rounded-lg hover:bg-slate-50 hover:text-slate-700 ${activeScreen === 'home' ? 'text-blue-500 bg-blue-50' : 'text-slate-500'}`}
           onClick={() => setActiveScreen('home')}
         >
@@ -396,9 +398,10 @@ const HomePage: React.FC = () => {
           onClick={() => setActiveScreen('profile')}
         >
           <User size={24} />
-          <span className="text-xs font-semibold">Profile</span>
-        </button>
-      </nav>
+            <span className="text-xs font-semibold">Profile</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 };
