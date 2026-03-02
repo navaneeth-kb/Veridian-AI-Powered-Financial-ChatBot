@@ -62,10 +62,17 @@ const Chatbot: React.FC = () => {
     if (!textToSend) {
       if (isPredictMode) {
         if (!companyName.trim() || !holdsStock) return;
-        textToSend = `Prediction request for: ${companyName.trim()}. Currently holding stock: ${holdsStock.toLowerCase() === 'y' ? 'Yes' : 'No'}.`;
+
+        // ⭐ structured payload for backend
+        textToSend = JSON.stringify({
+          ticker: companyName.trim(),
+          owns_stock: holdsStock.toLowerCase() === 'y'
+        });
+
         setCompanyName('');
         setHoldsStock('');
-      } else {
+      }
+      else {
         if (!inputValue.trim()) return;
         textToSend = inputValue.trim();
         setInputValue('');

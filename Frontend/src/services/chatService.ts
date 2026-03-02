@@ -2,7 +2,7 @@
  * Chat Service
  *
  * Handles all API communication with the backend chat service
- * Compatible with FastAPI /ask endpoint
+ * Compatible with FastAPI /ask and /predict endpoints
  */
 
 import type {
@@ -28,10 +28,11 @@ class ChatAPIError extends Error implements ChatServiceError {
 
 /**
  * Send a message to the AI financial advisor
- * @param message - User's financial query
- * @returns AI's response text
  */
-export const sendMessage = async (message: string): Promise<string> => {
+export const sendMessage = async (
+  message: string,
+  isPredictMode: boolean = false
+): Promise<string> => {
   // -----------------------------
   // Input validation
   // -----------------------------
@@ -49,29 +50,95 @@ export const sendMessage = async (message: string): Promise<string> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
+  // =====================================================
+  // ⭐ PREDICT MODE → Veridian (/predict)
+  // =====================================================
+  if (isPredictMode) {
+    try {
+      // 🛡️ Safe JSON parse
+      let payload: any;
+      try {
+        payload = JSON.parse(message);
+      } catch {
+        throw new ChatAPIError(
+          'Invalid prediction payload',
+          'INVALID_PREDICT_PAYLOAD'
+        );
+      }
+
+      const response = await fetch(
+        getApiUrl(API_ENDPOINTS.PREDICT, true),
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new ChatAPIError(
+          data?.error || 'Prediction failed',
+          'PREDICT_ERROR',
+          response.status
+        );
+      }
+
+      // ✅ FastAPI returns: { report: "..." }
+      if (!data?.report) {
+        throw new ChatAPIError(
+          'Invalid prediction response format',
+          'INVALID_PREDICT_RESPONSE'
+        );
+      }
+
+      return data.report;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+
+      if (error instanceof ChatAPIError) {
+        throw error;
+      }
+
+      if (error.name === 'AbortError') {
+        throw new ChatAPIError(
+          'Prediction request timed out — please try again',
+          'TIMEOUT'
+        );
+      }
+
+      throw new ChatAPIError(
+        error.message || 'Prediction failed',
+        'PREDICT_UNKNOWN_ERROR'
+      );
+    }
+  }
+
+  // =====================================================
+  // ⭐ NORMAL CHAT → /ask
+  // =====================================================
   try {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.CHAT), {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.CHAT, false), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-
-      // ✅ CRITICAL — FastAPI expects "question"
       body: JSON.stringify({
         question: message.trim(),
       }),
-
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
 
-    // Parse JSON safely
     const data = await response.json();
 
-    // -----------------------------
-    // HTTP error handling
-    // -----------------------------
     if (!response.ok) {
       throw new ChatAPIError(
         data?.error || 'Failed to get response from AI',
@@ -80,10 +147,7 @@ export const sendMessage = async (message: string): Promise<string> => {
       );
     }
 
-    // -----------------------------
-    // Validate FastAPI response
     // Expected: { answer: "..." }
-    // -----------------------------
     if (!data?.answer) {
       throw new ChatAPIError(
         'Invalid response format from server',
@@ -97,7 +161,6 @@ export const sendMessage = async (message: string): Promise<string> => {
 
     console.error('ChatService error:', error);
 
-    // Timeout
     if (error.name === 'AbortError') {
       throw new ChatAPIError(
         'Request timeout — please try again',
@@ -105,23 +168,20 @@ export const sendMessage = async (message: string): Promise<string> => {
       );
     }
 
-    // Already handled error
     if (error instanceof ChatAPIError) {
       throw error;
     }
 
-    // Network failure
     if (
       error.message?.includes('fetch') ||
       error.message?.includes('Failed to fetch')
     ) {
       throw new ChatAPIError(
-        'Unable to connect to the server. Ensure backend is running on http://localhost:8000',
+        'Unable to connect to the server. Please check backend connectivity.',
         'NETWORK_ERROR'
       );
     }
 
-    // Fallback
     throw new ChatAPIError(
       error.message || 'An unexpected error occurred',
       'UNKNOWN_ERROR'
@@ -143,7 +203,6 @@ export const healthCheck = async (): Promise<boolean> => {
     });
 
     clearTimeout(timeoutId);
-
     return response.ok;
   } catch (error) {
     console.error('Health check failed:', error);

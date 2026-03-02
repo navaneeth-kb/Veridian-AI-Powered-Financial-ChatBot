@@ -1,21 +1,35 @@
 /**
  * API Configuration
- * 
- * Centralized API configuration with environment variable support
+ *
+ * Smart routing:
+ * - Normal chat → localhost
+ * - Predict mode → ngrok
  */
 
-// Get API URL from environment variable or use default
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// ⭐ Local backend (normal chat)
+export const LOCAL_API_BASE = 'http://localhost:8000';
 
-// API timeout in milliseconds
-export const API_TIMEOUT = 60000; // 30 seconds
+// ⭐ Veridian ngrok backend
+export const VERIDIAN_API_BASE =
+  'https://cyclonic-compressive-ethyl.ngrok-free.dev';
 
-// API endpoints
+// API timeout
+export const API_TIMEOUT = 60000;
+
+// Endpoints
 export const API_ENDPOINTS = {
   CHAT: '/ask',
   HEALTH: '/',
+  PREDICT: '/predict',
 } as const;
 
-export const getApiUrl = (endpoint: string): string => {
-  return `${API_BASE_URL}${endpoint}`;
+/**
+ * Get correct API URL based on mode
+ */
+export const getApiUrl = (
+  endpoint: string,
+  isPredictMode: boolean = false
+): string => {
+  const base = isPredictMode ? VERIDIAN_API_BASE : LOCAL_API_BASE;
+  return `${base}${endpoint}`;
 };
