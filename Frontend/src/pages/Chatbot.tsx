@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Mic, ChevronUp } from 'lucide-react';
+import { Plus, ChevronUp, AlertCircle, TrendingUp } from 'lucide-react';
 import type { Message } from '../types/chat.types';
 import { chatService } from '../services/chatService';
 import { formatMessage } from '../utils/messageFormatter';
 
 const Chatbot: React.FC = () => {
+  // --- State ---
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
       type: 'assistant',
-      content: "Hello! I'm your AI Financial Advisor. How can I help you with financial advice today? You can ask me about stocks, mutual funds, budgeting, investing, and more!",
+      content: "Hello! I'm your AI Financial Advisor. How can I help you with financial advice today? You can ask me about stocks, mutual funds, budgeting, and more!",
       avatar: '🤖',
       timestamp: new Date()
     }
@@ -17,9 +18,13 @@ const Chatbot: React.FC = () => {
 
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isPredictMode, setIsPredictMode] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // --- Helpers ---
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -28,9 +33,22 @@ const Chatbot: React.FC = () => {
     inputRef.current?.focus();
   }, []);
 
+  const handlePredictToggle = () => {
+    // If turning ON, show disclaimer. If turning OFF, just toggle.
+    if (!isPredictMode) {
+      setShowDisclaimer(true);
+    } else {
+      setIsPredictMode(false);
+    }
+  };
+
+  const confirmPredictionMode = () => {
+    setIsPredictMode(true);
+    setShowDisclaimer(false);
+  };
+
   const handleSendMessage = async (messageText?: string) => {
     const textToSend = messageText || inputValue.trim();
-
     if (!textToSend || isLoading) return;
 
     setInputValue('');
@@ -47,7 +65,7 @@ const Chatbot: React.FC = () => {
     const loadingMessage: Message = {
       id: Date.now() + 1,
       type: 'loading',
-      content: 'Analyzing your financial query...',
+      content: isPredictMode ? 'Calculating predictive analytics...' : 'Analyzing your financial query...',
       avatar: '🤖',
       timestamp: new Date()
     };
@@ -55,7 +73,9 @@ const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const aiResponse = await chatService.sendMessage(textToSend);
+      // You can pass isPredictMode to your service if needed
+      //@ts-ignore
+      const aiResponse = await chatService.sendMessage(textToSend, isPredictMode);
 
       setMessages(prev => {
         const withoutLoading = prev.filter(msg => msg.type !== 'loading');
@@ -71,7 +91,6 @@ const Chatbot: React.FC = () => {
         ];
       });
     } catch (error: any) {
-      console.error('Chat error:', error);
       setMessages(prev => {
         const withoutLoading = prev.filter(msg => msg.type !== 'loading');
         return [
@@ -90,12 +109,6 @@ const Chatbot: React.FC = () => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
 
   const handleChipClick = (chipText: string) => {
     setInputValue(chipText);
@@ -107,8 +120,8 @@ const Chatbot: React.FC = () => {
       return (
         <div className="flex items-center gap-1 p-2">
           <span className="w-2 h-2 bg-slate-500 rounded-full animate-pulse"></span>
-          <span className="w-2 h-2 bg-slate-500 rounded-full animate-pulse wait-200"></span>
-          <span className="w-2 h-2 bg-slate-500 rounded-full animate-pulse wait-400"></span>
+          <span className="w-2 h-2 bg-slate-500 rounded-full animate-pulse [animation-delay:200ms]"></span>
+          <span className="w-2 h-2 bg-slate-500 rounded-full animate-pulse [animation-delay:400ms]"></span>
         </div>
       );
     }
@@ -118,12 +131,10 @@ const Chatbot: React.FC = () => {
         <div className="flex flex-col gap-2">
           <p className="text-red-800 text-sm m-0">{message.content}</p>
           <button
-            className="self-start py-1.5 px-3 bg-red-500 text-white border-none rounded-md text-xs font-medium cursor-pointer transition-colors hover:bg-red-600"
+            className="self-start py-1.5 px-3 bg-red-500 text-white rounded-md text-xs font-medium hover:bg-red-600"
             onClick={() => {
-              const lastUserMessage = [...messages].reverse().find(m => m.type === 'user');
-              if (lastUserMessage) {
-                handleSendMessage(lastUserMessage.content);
-              }
+              const lastUser = [...messages].reverse().find(m => m.type === 'user');
+              if (lastUser) handleSendMessage(lastUser.content);
             }}
           >
             Retry
@@ -132,7 +143,11 @@ const Chatbot: React.FC = () => {
       );
     }
 
-    return <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{formatMessage(message.content)}</div>;
+    return (
+      <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+        {formatMessage(message.content)}
+      </div>
+    );
   };
 
   const actionChips = [
@@ -143,47 +158,89 @@ const Chatbot: React.FC = () => {
   ];
 
   return (
-    // Changed to `fixed inset-0` to guarantee it locks to the viewport edges
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#f0f9f4]">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#f0f9f4] font-sans">
       
-      {/* Header */}
-      <div className="shrink-0 bg-white border-b border-gray-200 p-4 flex items-center shadow-sm z-20">
-        <h1 className="text-lg font-semibold text-gray-800">AI Financial Advisor</h1>
+      {/* --- Disclaimer Modal --- */}
+      {showDisclaimer && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-gray-100 animate-in fade-in zoom-in duration-200">
+            <div className="flex flex-col items-center text-center gap-4 mb-6">
+              <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center text-amber-600">
+                <AlertCircle size={40} />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Formal Financial Disclaimer</h2>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                The predictive outputs provided by this model are generated using statistical patterns and do not account for real-time market volatility. 
+                <span className="block mt-2 font-semibold text-gray-800">
+                  These projections are not financial advice and may be inaccurate. 
+                </span>
+                You must consult with a certified financial expert before making any investment or legal decisions based on this data.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowDisclaimer(false)}
+                className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Decline
+              </button>
+              <button 
+                onClick={confirmPredictionMode}
+                className="flex-1 py-3 px-4 rounded-xl bg-blue-900 text-white font-semibold hover:bg-blue-800 transition-shadow shadow-lg"
+              >
+                Accept & Proceed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Header --- */}
+      <div className="shrink-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between shadow-sm z-20">
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-semibold text-gray-800">AI Financial Advisor</h1>
+          {isPredictMode && (
+            <span className="flex items-center gap-1 text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+              <TrendingUp size={10} /> Predictive Active
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Chat Messages Area */}
+      {/* --- Chat Messages Area --- */}
       <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-4 scroll-smooth">
         {messages.map((message) => (
           <div
             key={message.id}
             className={`flex items-start gap-3 ${message.type === 'user' ? 'flex-row-reverse' : ''}`}
           >
-            <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                message.type === 'assistant' ? 'bg-teal-400' :
-                message.type === 'user' ? 'bg-orange-400' :
-                message.type === 'loading' ? 'bg-slate-400' :
-                'bg-red-400'
+            <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg shadow-sm ${
+                message.type === 'assistant' ? 'bg-teal-400 text-white' :
+                message.type === 'user' ? 'bg-orange-400 text-white' :
+                message.type === 'loading' ? 'bg-slate-400 text-white' :
+                'bg-red-400 text-white'
               }`}>
               {message.avatar}
             </div>
 
-            <div className={`max-w-[75%] rounded-2xl py-3 px-4 shadow-sm bg-white ${
-                message.type === 'assistant' ? 'rounded-tl-none' :
+            <div className={`max-w-[80%] rounded-2xl py-3 px-4 shadow-sm bg-white ${
+                message.type === 'assistant' ? 'rounded-tl-none border border-gray-100' :
                 message.type === 'user' ? 'rounded-tr-none border-l-4 border-orange-400' :
-                message.type === 'error' ? 'bg-red-100 border-l-4 border-red-500' :
-                'bg-slate-100'
+                message.type === 'error' ? 'bg-red-50 border-l-4 border-red-500' :
+                'bg-slate-50 border border-gray-200'
               }`}>
               {renderMessageContent(message)}
             </div>
           </div>
         ))}
 
-        {!isLoading && messages.length < 4 && (
+        {!isLoading && messages.length < 5 && (
           <div className="flex gap-2 flex-wrap pt-2">
             {actionChips.map((chip, idx) => (
               <button
                 key={idx}
-                className="py-2 px-4 bg-blue-100 text-blue-700 rounded-full text-sm font-medium border-none cursor-pointer transition-colors hover:bg-blue-200"
+                className="py-2 px-4 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100 hover:bg-blue-100 transition-colors"
                 onClick={() => handleChipClick(chip)}
               >
                 {chip}
@@ -191,44 +248,58 @@ const Chatbot: React.FC = () => {
             ))}
           </div>
         )}
-
-        {/* Scroll anchor */}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Bottom Input Bar */}
-      <div className="shrink-0 bg-white border-t border-gray-200 mb-23 py-3 px-4 shadow-[0_-4px_6px_rgba(0,0,0,0.05)] z-20">
-        <div className="flex items-center gap-2">
-          <button className="shrink-0 w-10 h-10 flex items-center justify-center text-gray-600 bg-transparent border-none rounded-full cursor-pointer transition-colors hover:bg-gray-100" aria-label="Add attachment">
+      {/* --- Bottom Input Bar --- */}
+      <div className="shrink-0 bg-white border-t border-gray-200 mb-23 py-4 px-4 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] z-20">
+        <div className="max-w-4xl mx-auto flex items-center gap-3">
+          <button className="shrink-0 w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="Add attachment">
             <Plus size={24} />
           </button>
 
-          <div className="flex-1 bg-gray-100 rounded-full py-2 px-4 flex items-center gap-2">
+          <div className="flex-1 bg-gray-100 rounded-2xl py-1.5 px-4 flex items-center gap-3 border border-transparent focus-within:border-gray-300 focus-within:bg-white transition-all">
             <input
               ref={inputRef}
               type="text"
-              placeholder="Ask about stocks, investing, finance..."
+              placeholder={isPredictMode ? "Enter data for prediction..." : "Ask about stocks, investing..."}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={(e) => { if(e.key === 'Enter') handleSendMessage(); }}
               disabled={isLoading}
-              maxLength={5000}
-              className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder-gray-400 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder-gray-400 py-2"
             />
-            <button className="shrink-0 w-10 h-10 flex items-center justify-center text-gray-600 bg-transparent border-none rounded-full cursor-pointer transition-colors hover:bg-gray-100" aria-label="Voice input">
-              <Mic size={20} />
-            </button>
+            
+            {/* Predict Toggle */}
+            <div className="flex items-center gap-2 border-l border-gray-300 pl-3 py-1">
+              <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${isPredictMode ? 'text-blue-900' : 'text-gray-400'}`}>
+                Predict
+              </span>
+              <button 
+                onClick={handlePredictToggle}
+                className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${
+                  isPredictMode ? 'bg-blue-900' : 'bg-gray-300'
+                }`}
+              >
+                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${isPredictMode ? 'translate-x-5.5' : 'translate-x-1'}`} />
+              </button>
+            </div>
           </div>
 
           <button
-            className={`shrink-0 w-12 h-12 bg-blue-900 rounded-full flex items-center justify-center text-white border-none cursor-pointer shadow-md transition-colors hover:not(:disabled):bg-blue-800 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:opacity-60 ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+            className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition-all ${
+              isLoading || !inputValue.trim() 
+                ? 'bg-gray-300 cursor-not-allowed shadow-none' 
+                : 'bg-blue-900 hover:bg-blue-800 active:scale-95'
+            }`}
             onClick={() => handleSendMessage()}
             disabled={isLoading || !inputValue.trim()}
-            aria-label="Send message"
           >
             <ChevronUp size={24} />
           </button>
         </div>
+        {/* Safe area spacer for mobile keyboards */}
+        <div className="h-2" />
       </div>
     </div>
   );
