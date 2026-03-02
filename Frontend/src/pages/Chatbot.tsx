@@ -17,12 +17,17 @@ const Chatbot: React.FC = () => {
   ]);
 
   const [inputValue, setInputValue] = useState('');
+  // Predict Mode specific states
+  const [companyName, setCompanyName] = useState('');
+  const [holdsStock, setHoldsStock] = useState(''); 
+  
   const [isLoading, setIsLoading] = useState(false);
   const [isPredictMode, setIsPredictMode] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const companyInputRef = useRef<HTMLInputElement>(null);
 
   // --- Helpers ---
   useEffect(() => {
@@ -34,24 +39,40 @@ const Chatbot: React.FC = () => {
   }, []);
 
   const handlePredictToggle = () => {
-    // If turning ON, show disclaimer. If turning OFF, just toggle.
     if (!isPredictMode) {
       setShowDisclaimer(true);
     } else {
       setIsPredictMode(false);
+      // Optional: Clear predict inputs when toggling off
+      setCompanyName('');
+      setHoldsStock('');
     }
   };
 
   const confirmPredictionMode = () => {
     setIsPredictMode(true);
     setShowDisclaimer(false);
+    setTimeout(() => companyInputRef.current?.focus(), 100);
   };
 
   const handleSendMessage = async (messageText?: string) => {
-    const textToSend = messageText || inputValue.trim();
-    if (!textToSend || isLoading) return;
+    let textToSend = messageText || '';
 
-    setInputValue('');
+    // Handle standard vs predict mode inputs
+    if (!textToSend) {
+      if (isPredictMode) {
+        if (!companyName.trim() || !holdsStock) return;
+        textToSend = `Prediction request for: ${companyName.trim()}. Currently holding stock: ${holdsStock.toLowerCase() === 'y' ? 'Yes' : 'No'}.`;
+        setCompanyName('');
+        setHoldsStock('');
+      } else {
+        if (!inputValue.trim()) return;
+        textToSend = inputValue.trim();
+        setInputValue('');
+      }
+    }
+
+    if (!textToSend || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now(),
@@ -73,8 +94,7 @@ const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // You can pass isPredictMode to your service if needed
-      //@ts-ignore
+      // @ts-ignore
       const aiResponse = await chatService.sendMessage(textToSend, isPredictMode);
 
       setMessages(prev => {
@@ -109,10 +129,9 @@ const Chatbot: React.FC = () => {
     }
   };
 
-
   const handleChipClick = (chipText: string) => {
     setInputValue(chipText);
-    inputRef.current?.focus();
+    if (!isPredictMode) inputRef.current?.focus();
   };
 
   const renderMessageContent = (message: Message) => {
@@ -156,6 +175,8 @@ const Chatbot: React.FC = () => {
     'Diversification strategies',
     'Tax-saving investments'
   ];
+
+  const isSendDisabled = isLoading || (isPredictMode ? (!companyName.trim() || !holdsStock) : !inputValue.trim());
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#f0f9f4] font-sans">
@@ -259,16 +280,50 @@ const Chatbot: React.FC = () => {
           </button>
 
           <div className="flex-1 bg-gray-100 rounded-2xl py-1.5 px-4 flex items-center gap-3 border border-transparent focus-within:border-gray-300 focus-within:bg-white transition-all">
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder={isPredictMode ? "Enter data for prediction..." : "Ask about stocks, investing..."}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => { if(e.key === 'Enter') handleSendMessage(); }}
-              disabled={isLoading}
-              className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder-gray-400 py-2"
-            />
+            
+            {/* Dynamic Inputs based on Mode */}
+            {isPredictMode ? (
+              <div className="flex flex-1 items-center gap-2">
+                <input
+                  ref={companyInputRef}
+                  type="text"
+                  placeholder="Company or Ticker..."
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  onKeyDown={(e) => { if(e.key === 'Enter' && companyName && holdsStock) handleSendMessage(); }}
+                  disabled={isLoading}
+                  className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder-gray-400 py-2 w-full min-w-[120px]"
+                />
+                <div className="w-px h-6 bg-gray-300"></div> {/* Divider */}
+                <input
+                  type="text"
+                  placeholder="Hold? (y/n)"
+                  value={holdsStock}
+                  maxLength={1}
+                  onChange={(e) => {
+                    const val = e.target.value.toLowerCase();
+                    // Restrict input to only 'y' or 'n' or empty
+                    if (val === '' || val === 'y' || val === 'n') {
+                      setHoldsStock(val);
+                    }
+                  }}
+                  onKeyDown={(e) => { if(e.key === 'Enter' && companyName && holdsStock) handleSendMessage(); }}
+                  disabled={isLoading}
+                  className="w-20 bg-transparent border-none outline-none text-sm text-gray-800 placeholder-gray-400 py-2 text-center"
+                />
+              </div>
+            ) : (
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Ask about stocks, investing..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => { if(e.key === 'Enter') handleSendMessage(); }}
+                disabled={isLoading}
+                className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder-gray-400 py-2"
+              />
+            )}
             
             {/* Predict Toggle */}
             <div className="flex items-center gap-2 border-l border-gray-300 pl-3 py-1">
@@ -288,12 +343,12 @@ const Chatbot: React.FC = () => {
 
           <button
             className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition-all ${
-              isLoading || !inputValue.trim() 
+              isSendDisabled 
                 ? 'bg-gray-300 cursor-not-allowed shadow-none' 
                 : 'bg-blue-900 hover:bg-blue-800 active:scale-95'
             }`}
             onClick={() => handleSendMessage()}
-            disabled={isLoading || !inputValue.trim()}
+            disabled={isSendDisabled}
           >
             <ChevronUp size={24} />
           </button>
